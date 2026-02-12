@@ -7,20 +7,27 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { MobileHeader } from "@/components/layout/MobileHeader";
+import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuthStore();
+  const { user, userData, loading, refreshUserData } = useAuthStore();
   const router = useRouter();
+
+  const showOnboarding = !loading && !!user && userData?.onboardingCompleted !== true;
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  const handleOnboardingComplete = async () => {
+    await refreshUserData();
+  };
 
   if (loading) {
     return (
@@ -39,6 +46,10 @@ export default function DashboardLayout({
         <Navbar />
         <main className="pb-20 md:pb-0">{children}</main>
         <BottomNav />
+        <OnboardingModal
+          open={showOnboarding}
+          onComplete={handleOnboardingComplete}
+        />
       </div>
     </ThemeProvider>
   );

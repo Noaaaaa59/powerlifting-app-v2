@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export type WeightUnit = "kg" | "lbs";
 
 export type ThemeColor = "rouge" | "neutre" | "forest" | "rose" | "ocean" | "sunset";
@@ -6,9 +8,30 @@ export type ThemeMode = "light" | "dark" | "auto";
 export type Gender = "male" | "female";
 export type ExperienceLevel = "beginner" | "intermediate" | "advanced" | "elite";
 
-export type MaleWeightCategory = 59 | 66 | 74 | 83 | 93 | 105 | 120 | 121;
-export type FemaleWeightCategory = 47 | 52 | 57 | 63 | 69 | 76 | 84 | 85;
-export type WeightCategory = MaleWeightCategory | FemaleWeightCategory;
+export type PriorityLift = "squat" | "bench" | "deadlift";
+export type ProgramType = "531" | "linear";
+export type TrainingMaxPercentage = 90 | 95 | 100;
+
+export const WEIGHT_CATEGORIES_MALE = ["59", "66", "74", "83", "93", "105", "120", "120+"] as const;
+export const WEIGHT_CATEGORIES_FEMALE = ["47", "52", "57", "63", "69", "76", "84", "84+"] as const;
+
+export type WeightCategoryMale = (typeof WEIGHT_CATEGORIES_MALE)[number];
+export type WeightCategoryFemale = (typeof WEIGHT_CATEGORIES_FEMALE)[number];
+export type WeightCategory = WeightCategoryMale | WeightCategoryFemale;
+
+export function getWeightCategory(bodyweight: number, gender: Gender): WeightCategory {
+  const categories = gender === "male" ? WEIGHT_CATEGORIES_MALE : WEIGHT_CATEGORIES_FEMALE;
+  const limits = gender === "male"
+    ? [59, 66, 74, 83, 93, 105, 120, Infinity]
+    : [47, 52, 57, 63, 69, 76, 84, Infinity];
+
+  for (let i = 0; i < limits.length; i++) {
+    if (bodyweight <= limits[i]) {
+      return categories[i];
+    }
+  }
+  return categories[categories.length - 1];
+}
 
 export interface UserPreferences {
   weightUnit: WeightUnit;
@@ -17,28 +40,32 @@ export interface UserPreferences {
   restTimerDefault: number;
 }
 
+export interface ProgramProgress {
+  currentWeek: number;
+  currentDay: number;
+  startedAt?: Timestamp;
+}
+
 export interface ProgramSettings {
   daysPerWeek: 3 | 4 | 5;
   durationWeeks: 4 | 6;
-  priorityLift: "squat" | "bench" | "deadlift" | null;
-  trainingMaxPercentage: number;
+  priorityLift: PriorityLift;
+  programType: ProgramType;
+  trainingMaxPercentage?: TrainingMaxPercentage;
 }
 
 export interface User {
   uid: string;
   email: string;
   displayName: string;
-  photoURL: string | null;
-  createdAt: Date;
+  photoURL: string;
+  createdAt: Timestamp;
   preferences: UserPreferences;
-  bodyweight: number | null;
-  gender: Gender | null;
-  experience: ExperienceLevel | null;
-  friends: string[];
-  onboardingCompleted: boolean;
-  programProgress: {
-    currentWeek: number;
-    currentDay: number;
-  } | null;
-  programSettings: ProgramSettings | null;
+  bodyweight: number;
+  gender?: Gender;
+  experience: ExperienceLevel;
+  friends?: string[];
+  onboardingCompleted?: boolean;
+  programProgress?: ProgramProgress;
+  programSettings?: ProgramSettings;
 }

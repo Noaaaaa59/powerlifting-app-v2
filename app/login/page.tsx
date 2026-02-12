@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "@/lib/firebase/config";
+import { signInWithGoogle } from "@/lib/firebase/auth";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Dumbbell } from "lucide-react";
@@ -11,6 +10,8 @@ import { Dumbbell } from "lucide-react";
 export default function LoginPage() {
   const { user, loading } = useAuthStore();
   const router = useRouter();
+  const [signingIn, setSigningIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && user) {
@@ -19,8 +20,15 @@ export default function LoginPage() {
   }, [user, loading, router]);
 
   const handleGoogleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    setSigningIn(true);
+    setError(null);
+    try {
+      await signInWithGoogle();
+    } catch {
+      setError("Erreur de connexion. Veuillez réessayer.");
+    } finally {
+      setSigningIn(false);
+    }
   };
 
   return (
@@ -34,8 +42,14 @@ export default function LoginPage() {
           Track your Squat, Bench Press and Deadlift progress
         </p>
       </div>
-      <Button size="lg" onClick={handleGoogleSignIn} className="gap-2">
-        Se connecter avec Google
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <Button
+        size="lg"
+        onClick={handleGoogleSignIn}
+        disabled={signingIn}
+        className="gap-2"
+      >
+        {signingIn ? "Connexion..." : "Se connecter avec Google"}
       </Button>
     </div>
   );
